@@ -58,21 +58,23 @@ private:
     int walk_distance_ = 0;
 };
 
-int main() {
-    net::io_context io;
-
-    Robot r1(io, 1);
-    Robot r2(io, 2);
+void RunRobots(net::io_context& io) {
+    auto r1 = std::make_shared<Robot>(io, 1);
+    auto r2 = std::make_shared<Robot>(io, 2);
 
     // Робот r1 сперва поворачивается на 60 градусов, а потом идёт 4 метра
-    r1.Rotate(60, [&r1] {
-        r1.Walk(4, [] {});
+    r1->Rotate(60, [r1] {
+        r1->Walk(4, [r1] {});
     });
     // Робот r2 сперва идёт 2 метра, а потом ещё 3 метра
-    r2.Walk(2, [&r2] {
-        r2.Walk(3, [] {});
+    r2->Walk(2, [r2] {
+        r2->Walk(3, [r2] {});
     });
+}
 
+int main() {
+    net::io_context io;
+    RunRobots(io);
     for (;;) {
         try {
             io.run();
