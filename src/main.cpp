@@ -6,7 +6,7 @@ namespace chrono = std::chrono;
 using namespace std::literals;
 using boost::system::error_code;
 
-class Robot {
+class Robot : public std::enable_shared_from_this<Robot> {
 public:
     using Duration = net::steady_timer::duration;
 
@@ -27,10 +27,11 @@ public:
 
         timer_.expires_after(chrono::duration_cast<Duration>(t));
 
-        timer_.async_wait([distance, cb = std::forward<Callback>(cb), this](error_code ec) {
+        timer_.async_wait([distance, cb = std::forward<Callback>(cb), 
+                           self = shared_from_this()](error_code ec) {
             if (ec) throw std::runtime_error(ec.what());
-            walk_distance_ += distance;
-            std::cout << id_ << "> Walked distance: "sv << walk_distance_ << "m\n"sv;
+            self->walk_distance_ += distance;
+            std::cout << self->id_ << "> Walked distance: "sv << self->walk_distance_ << "m\n"sv;
             cb();
         });
     }
@@ -43,10 +44,11 @@ public:
 
         timer_.expires_after(chrono::duration_cast<Duration>(t));
 
-        timer_.async_wait([angle, cb = std::forward<Callback>(cb), this](error_code ec) {
+        timer_.async_wait([angle, cb = std::forward<Callback>(cb),
+                           self = shared_from_this()](error_code ec) {
             if (ec) throw std::runtime_error(ec.what());
-            angle_ = (angle_ + angle) % 360;
-            std::cout << id_ << "> Rotation angle: "sv << angle_ << "deg.\n"sv;
+            self->angle_ = (self->angle_ + angle) % 360;
+            std::cout << self->id_ << "> Rotation angle: "sv << self->angle_ << "deg.\n"sv;
             cb();
         });
     }
@@ -64,11 +66,11 @@ void RunRobots(net::io_context& io) {
 
     // Робот r1 сперва поворачивается на 60 градусов, а потом идёт 4 метра
     r1->Rotate(60, [r1] {
-        r1->Walk(4, [r1] {});
+        r1->Walk(4, [] {});
     });
     // Робот r2 сперва идёт 2 метра, а потом ещё 3 метра
     r2->Walk(2, [r2] {
-        r2->Walk(3, [r2] {});
+        r2->Walk(3, [] {});
     });
 }
 
